@@ -11,7 +11,7 @@
 
 
 
-local a = "v2.0.3 NameHub (jb-zoom-20260529)"
+local a = "v2.0.4 NameHub (jb-npc-target-20260529)"
 
 
 
@@ -156,6 +156,12 @@ local w = {
     CoinsGained       = 0,
     StartTime         = nil,
     StatsCounting     = false,
+    
+    
+    
+    
+    
+    SkipPlayers       = true,
 
     
     GoatESP           = false,
@@ -527,11 +533,22 @@ function I.allWithHumanoid()
 end
 
 function I.matchesName(J, K)
+    local L = d:GetPlayerFromCharacter(J) ~= nil
+
+    if K == "Players"  then return L end
+    if K == "All NPCs" then return not L end
+
+    
+    
+    
+    
+    
+    
+    if w.SkipPlayers and L then return false end
+
     if not K or K == "" then return true end
-    if K == "Players"  then return d:GetPlayerFromCharacter(J) ~= nil end
-    if K == "All NPCs" then return d:GetPlayerFromCharacter(J) == nil end
-    local L = J.Name:lower()
-    return L:find(K:lower(), 1, true) ~= nil
+    local M = J.Name:lower()
+    return M:find(K:lower(), 1, true) ~= nil
 end
 
 function I.bestByPriority(J)
@@ -1198,7 +1215,7 @@ end
 local ad = {}
 
 local ae = {
-    "Autofarm", "FarmTarget", "FarmPriority", "Speed", "AutofarmDino",
+    "Autofarm", "FarmTarget", "FarmPriority", "Speed", "AutofarmDino", "SkipPlayers", "AutoLoot",
     "GoatESP", "GoatESPColor", "AmberESP", "AmberESPColor", "NoPromptDelay",
     "OutlineTransparency", "FillTransparency",
     "Fly", "FlySpeed", "RespawnDelay", "AutoRespawn", "Anchored",
@@ -2633,6 +2650,7 @@ do
         if #w.FarmPriority == 0 then w.FarmPriority = { az } end
     end)
     ah.multiDropdown(ay, "Farm Priority List", "FarmPriority", v.FarmTargetOptions)
+    ah.toggle(ay, "Skip Players (NPC-only autofarm)", "SkipPlayers")
     ah.slider(ay, "Speed", "Speed", 16, 200, 1, function() G.applySpeed() end)
     ah.dropdown(ay, "Autofarm Dino", "AutofarmDino", v.DinoOptions, function(az)
         local aA = H.remoteByKeywords(v.DinoChangeKeywords)
