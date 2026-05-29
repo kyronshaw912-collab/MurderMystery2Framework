@@ -11,7 +11,7 @@
 
 
 
-local a = "v2.0.6.1 NameHub (jb-movement-fix-20260529)"
+local a = "v2.0.6.2 NameHub (jb-remote-discovery-20260529)"
 
 
 
@@ -176,6 +176,11 @@ local w = {
     
     
     StopDistance      = 10,
+    
+    
+    
+    
+    ManualAttackRemote = "",
     
     
     
@@ -497,214 +502,266 @@ local function walk(I, J, K)
         walk(M, J, K)
     end
 end
+local I=function()    
 
 
-function H.remoteByName(I)
-    if not I or I == "" then return nil end
-    local J
-    walk(i, function(K)
-        if J then return end
-        if (K:IsA("RemoteEvent") or K:IsA("RemoteFunction")) and K.Name == I then
-            J = K
+
+
+local I = { i }
+    pcall(function()
+        local J = q or d.LocalPlayer
+        if J then
+            if J.Character then I[#I + 1] = J.Character end
+            local K = J:FindFirstChild("PlayerScripts")
+            if K then I[#I + 1] = K end
         end
     end)
-    return J
+    
+    
+    I[#I + 1] = h
+    return I
 end
 
 
-function H.remoteByKeywords(I)
-    for J, K in ipairs(I or {}) do
-        local L = K:lower()
-        local M
-        walk(i, function(N)
-            if M then return end
-            if N:IsA("RemoteEvent") or N:IsA("RemoteFunction") then
-                if N.Name:lower():find(L, 1, true) then M = N end
+
+function H.remoteByName(J)
+    if not J or J == "" then return nil end
+    
+    
+    local K = J:find("%.") ~= nil
+    local L
+    for M, N in ipairs(I()) do
+        if L then break end
+        walk(N, function(O)
+            if L then return end
+            if O:IsA("RemoteEvent") or O:IsA("RemoteFunction") then
+                if K then
+                    if O:GetFullName():lower():find(J:lower(), 1, true) then
+                        L = O
+                    end
+                elseif O.Name == J then
+                    L = O
+                end
             end
         end)
-        if M then return M, K end
+    end
+    return L
+end
+
+
+
+function H.remoteByKeywords(J)
+    for K, L in ipairs(J or {}) do
+        local M = L:lower()
+        local N
+        for O, P in ipairs(I()) do
+            if N then break end
+            walk(P, function(Q)
+                if N then return end
+                if Q:IsA("RemoteEvent") or Q:IsA("RemoteFunction") then
+                    if Q.Name:lower():find(M, 1, true) then N = Q end
+                end
+            end)
+        end
+        if N then return N, L end
     end
     return nil, nil
 end
 
-function H.allRemotes(I)
-    I = I or 300
-    local J = {}
-    walk(i, function(K)
-        if #J >= I then return end
-        if K:IsA("RemoteEvent") or K:IsA("RemoteFunction") then
-            J[#J + 1] = K:GetFullName() .. "  [" .. K.ClassName .. "]"
-        end
-    end)
-    return J
-end
-
-
-
-
-local I = {}
-
-function I.allWithHumanoid()
-    local J = {}
-    for K, L in ipairs(h:GetDescendants()) do
-        if L:IsA("Model") and L ~= G.get() then
-            local M = L:FindFirstChildOfClass("Humanoid")
-            local N = L:FindFirstChild("HumanoidRootPart") or L.PrimaryPart
-            if M and N and M.Health > 0 then J[#J + 1] = { model = L, hum = M, root = N } end
-        end
-    end
-    return J
-end
-
-
-
-
-
-
-function I.allByName(J)
-    if not J or J == "" then return {} end
-    local K = J:lower()
+function H.allRemotes(J)
+    J = J or 600
+    local K = {}
     local L = {}
-    local M = G.get()
-    for N, O in ipairs(h:GetDescendants()) do
-        if O:IsA("Model") and O ~= M and O.Name:lower():find(K, 1, true) then
-            if not (w.SkipPlayers and d:GetPlayerFromCharacter(O) ~= nil) then
-                local P = O:FindFirstChild("HumanoidRootPart") or O.PrimaryPart
-                if not P then
-                    
-                    for Q, R in ipairs(O:GetChildren()) do
-                        if R:IsA("BasePart") then P = R; break end
-                    end
-                end
-                local Q = O:FindFirstChildOfClass("Humanoid")
-                if P then
-                    L[#L + 1] = { model = O, hum = Q, root = P }
-                end
+    for M, N in ipairs(I()) do
+        walk(N, function(O)
+            if #K >= J then return end
+            if (O:IsA("RemoteEvent") or O:IsA("RemoteFunction")) and not L[O] then
+                L[O] = true
+                K[#K + 1] = O:GetFullName() .. "  [" .. O.ClassName .. "]"
             end
-        end
+        end)
     end
-    return L
-end
-
-function I.matchesName(J, K)
-    local L = d:GetPlayerFromCharacter(J) ~= nil
-
-    if K == "Players"  then return L end
-    if K == "All NPCs" then return not L end
-
-    
-    
-    
-    
-    
-    
-    if w.SkipPlayers and L then return false end
-
-    if not K or K == "" then return true end
-    local M = J.Name:lower()
-    return M:find(K:lower(), 1, true) ~= nil
-end
-
-function I.bestByPriority(J)
-    local K = I.allWithHumanoid()
-    local L   = G.root()
-    if not L then return nil end
-
-    
-    for M, N in ipairs(J or {}) do
-        local O ,P=(math.huge
-)        for Q, R in ipairs(K) do
-            if I.matchesName(R.model, N) then
-                if w.MaxTargetHP == 0 or R.hum.Health <= w.MaxTargetHP then
-                    if R.hum.Health >= w.MinTargetHP then
-                        local S = D.distance(L, R.root)
-                        if S < O then P, O = R, S end
-                    end
-                end
-            end
-        end
-        if P then return P end
-    end
-    return nil
-end
-
-function I.dump(J)
-    J = J or 50
-    local K  = G.root()
-    local L = {}
-    for M, N in ipairs(I.allWithHumanoid()) do
-        if #L >= J then break end
-        local O = K and D.distance(K, N.root) or -1
-        local P = d:GetPlayerFromCharacter(N.model)
-        L[#L + 1] = ("%-30s HP=%-6.1f dist=%-6.1f %s"):format(
-            N.model.Name:sub(1, 30), N.hum.Health, O, P and ("player=" .. P.Name) or "NPC")
-    end
-    return L
+    return K
 end
 
 
 
 
 local J = {}
-local K, L
 
-function J.findRemote()
-    if K and K.Parent then return K, L end
-    
-    for M, N in ipairs(v.JB_AttackNames) do
-        local O = H.remoteByName(N)
-        if O then K, L = O, N; return O, N end
+function J.allWithHumanoid()
+    local K = {}
+    for L, M in ipairs(h:GetDescendants()) do
+        if M:IsA("Model") and M ~= G.get() then
+            local N = M:FindFirstChildOfClass("Humanoid")
+            local O = M:FindFirstChild("HumanoidRootPart") or M.PrimaryPart
+            if N and O and N.Health > 0 then K[#K + 1] = { model = M, hum = N, root = O } end
+        end
     end
-    
-    local M, N = H.remoteByKeywords(v.AttackKeywords)
-    K, L = M, N or ""
-    return M, L
+    return K
 end
 
-function J.invalidateCache() K, L = nil, nil end
 
-function J.fireAt(M)
-    local N, O = J.findRemote()
-    if not N or not M then return false end
 
-    local P
-    if O == "successOnHit" then
-        P = {
-            { M.hum },
-            { M.model },
-            { M.root },
-            { M.hum, M.root.Position },
-            { M.model, M.root.Position },
-            { { Target = M.hum }   },
-            { { Target = M.model } },
+
+
+
+function J.allByName(K)
+    if not K or K == "" then return {} end
+    local L = K:lower()
+    local M = {}
+    local N = G.get()
+    for O, P in ipairs(h:GetDescendants()) do
+        if P:IsA("Model") and P ~= N and P.Name:lower():find(L, 1, true) then
+            if not (w.SkipPlayers and d:GetPlayerFromCharacter(P) ~= nil) then
+                local Q = P:FindFirstChild("HumanoidRootPart") or P.PrimaryPart
+                if not Q then
+                    
+                    for R, S in ipairs(P:GetChildren()) do
+                        if S:IsA("BasePart") then Q = S; break end
+                    end
+                end
+                local R = P:FindFirstChildOfClass("Humanoid")
+                if Q then
+                    M[#M + 1] = { model = P, hum = R, root = Q }
+                end
+            end
+        end
+    end
+    return M
+end
+
+function J.matchesName(K, L)
+    local M = d:GetPlayerFromCharacter(K) ~= nil
+
+    if L == "Players"  then return M end
+    if L == "All NPCs" then return not M end
+
+    
+    
+    
+    
+    
+    
+    if w.SkipPlayers and M then return false end
+
+    if not L or L == "" then return true end
+    local N = K.Name:lower()
+    return N:find(L:lower(), 1, true) ~= nil
+end
+
+function J.bestByPriority(K)
+    local L = J.allWithHumanoid()
+    local M   = G.root()
+    if not M then return nil end
+
+    
+    for N, O in ipairs(K or {}) do
+        local P ,Q=(math.huge
+)        for R, S in ipairs(L) do
+            if J.matchesName(S.model, O) then
+                if w.MaxTargetHP == 0 or S.hum.Health <= w.MaxTargetHP then
+                    if S.hum.Health >= w.MinTargetHP then
+                        local T = D.distance(M, S.root)
+                        if T < P then Q, P = S, T end
+                    end
+                end
+            end
+        end
+        if Q then return Q end
+    end
+    return nil
+end
+
+function J.dump(K)
+    K = K or 50
+    local L  = G.root()
+    local M = {}
+    for N, O in ipairs(J.allWithHumanoid()) do
+        if #M >= K then break end
+        local P = L and D.distance(L, O.root) or -1
+        local Q = d:GetPlayerFromCharacter(O.model)
+        M[#M + 1] = ("%-30s HP=%-6.1f dist=%-6.1f %s"):format(
+            O.model.Name:sub(1, 30), O.hum.Health, P, Q and ("player=" .. Q.Name) or "NPC")
+    end
+    return M
+end
+
+
+
+
+local K = {}
+local L, M
+
+function K.findRemote()
+    
+    
+    if w.ManualAttackRemote and w.ManualAttackRemote ~= "" then
+        if L and L.Parent and M == w.ManualAttackRemote then
+            return L, M
+        end
+        local N = H.remoteByName(w.ManualAttackRemote)
+        if N then
+            L, M = N, w.ManualAttackRemote
+            return N, w.ManualAttackRemote
+        end
+        
+        
+    end
+    if L and L.Parent then return L, M end
+    for N, O in ipairs(v.JB_AttackNames) do
+        local P = H.remoteByName(O)
+        if P then L, M = P, O; return P, O end
+    end
+    local N, O = H.remoteByKeywords(v.AttackKeywords)
+    L, M = N, O or ""
+    return N, M
+end
+
+function K.invalidateCache() L, M = nil, nil end
+
+function K.fireAt(N)
+    local O, P = K.findRemote()
+    if not O or not N then return false end
+
+    local Q
+    if P == "successOnHit" then
+        Q = {
+            { N.hum },
+            { N.model },
+            { N.root },
+            { N.hum, N.root.Position },
+            { N.model, N.root.Position },
+            { { Target = N.hum }   },
+            { { Target = N.model } },
         }
-    elseif O == "tap" then
-        P = {
-            { M.root.Position },
-            { M.model },
+    elseif P == "tap" then
+        Q = {
+            { N.root.Position },
+            { N.model },
             { },
         }
     else
-        P = { { M.model }, { M.hum }, { M.root }, { M.model.Name }, { } }
+        Q = { { N.model }, { N.hum }, { N.root }, { N.model.Name }, { } }
     end
 
-    for Q, R in ipairs(P) do
-        local S = pcall(function()
-            if N:IsA("RemoteEvent") then N:FireServer(table.unpack(R))
-            else N:InvokeServer(table.unpack(R)) end
+    for R, S in ipairs(Q) do
+        local T = pcall(function()
+            if O:IsA("RemoteEvent") then O:FireServer(table.unpack(S))
+            else O:InvokeServer(table.unpack(S)) end
         end)
-        if S then return true end
+        if T then return true end
     end
     return false
 end
 
 
-function J.collectNearby()
-    for M, N in ipairs(v.JB_LootNames) do
-        local O = H.remoteByName(N)
-        if O then
+function K.collectNearby()
+    for N, O in ipairs(v.JB_LootNames) do
+        local P = H.remoteByName(O)
+        if P then
             pcall(function()
-                if O:IsA("RemoteEvent") then O:FireServer() else O:InvokeServer() end
+                if P:IsA("RemoteEvent") then P:FireServer() else P:InvokeServer() end
             end)
         end
     end
@@ -713,49 +770,49 @@ end
 
 
 
-local M = {}
+local N = {}
 
-function M.start()
+function N.start()
     D.spawn(function()
-        local N, O, P = 0, 0, 0
+        local O, P, Q = 0, 0, 0
         while w.Alive and w.Autofarm do
-            P = P + 1
-            local Q = G.root()
-            if Q then
-                local R = (w.FarmPriority and #w.FarmPriority > 0) and w.FarmPriority or { w.FarmTarget }
-                local S = I.bestByPriority(R)
+            Q = Q + 1
+            local R = G.root()
+            if R then
+                local S = (w.FarmPriority and #w.FarmPriority > 0) and w.FarmPriority or { w.FarmTarget }
+                local T = J.bestByPriority(S)
 
                 
                 
                 
                 
-                if not S then
-                    local T = math.huge
-                    for U, V in ipairs(R) do
-                        for W, X in ipairs(I.allByName(V)) do
-                            local Y = D.distance(Q, X.root)
-                            if Y < T then S = X; T = Y end
+                if not T then
+                    local U = math.huge
+                    for V, W in ipairs(S) do
+                        for X, Y in ipairs(J.allByName(W)) do
+                            local Z = D.distance(R, Y.root)
+                            if Z < U then T = Y; U = Z end
                         end
-                        if S then break end
+                        if T then break end
                     end
                 end
 
-                local T = G.humanoid()
-                local U = (T and w.DisengageAt > 0 and T.Health < w.DisengageAt)
+                local U = G.humanoid()
+                local V = (U and w.DisengageAt > 0 and U.Health < w.DisengageAt)
 
-                if U then
-                    w._FarmStatus = ("Retreating (HP %d < %d)"):format(math.floor(T.Health), w.DisengageAt)
+                if V then
+                    w._FarmStatus = ("Retreating (HP %d < %d)"):format(math.floor(U.Health), w.DisengageAt)
                     
                     
                     
                     if w.AutofarmMovement == "Fly" and FarmMove.flyActive() then
                         _fmBV.Velocity = Vector3.zero
                     end
-                elseif S and S.model.Parent and S.root then
-                    local V = D.distance(Q, S.root)
-                    w._FarmStatus    = ("Engaging %s @ %.0fm"):format(S.model.Name, V)
-                    w._LastTarget    = S.model.Name
-                    w._LastDistance  = V
+                elseif T and T.model.Parent and T.root then
+                    local W = D.distance(R, T.root)
+                    w._FarmStatus    = ("Engaging %s @ %.0fm"):format(T.model.Name, W)
+                    w._LastTarget    = T.model.Name
+                    w._LastDistance  = W
                     w._TargetsFound  = (w._TargetsFound or 0)
 
                     
@@ -767,37 +824,37 @@ function M.start()
                     
                     
                     if w.AutofarmMovement == "Fly" then
-                        if V > w.StopDistance then
-                            FarmMove.flyToward(S.root.Position)
+                        if W > w.StopDistance then
+                            FarmMove.flyToward(T.root.Position)
                         elseif FarmMove.flyActive() then
                             _fmBV.Velocity = Vector3.zero
                         end
                     elseif w.AutofarmMovement == "Walk" then
-                        if V > w.StopDistance then
-                            FarmMove.walkTo(S.root.Position)
+                        if W > w.StopDistance then
+                            FarmMove.walkTo(T.root.Position)
                         end
                     else
                         
                         
                         
                         
-                        if V > w.Range then
-                            FarmMove.tpTo(S.root.Position)
+                        if W > w.Range then
+                            FarmMove.tpTo(T.root.Position)
                         end
                     end
 
-                    if V <= w.Range and tick() >= N then
-                        local W, X = J.findRemote()
-                        w._AttackRemote = X or "(none)"
-                        local Y = J.fireAt(S)
-                        w._LastFire = Y and "OK" or "FAIL"
-                        if Y and w.StatsCounting then
+                    if W <= w.Range and tick() >= O then
+                        local X, Y = K.findRemote()
+                        w._AttackRemote = Y or "(none)"
+                        local Z = K.fireAt(T)
+                        w._LastFire = Z and "OK" or "FAIL"
+                        if Z and w.StatsCounting then
                             w.CoinsGained = w.CoinsGained + 1
                         end
-                        N = tick() + 0.35
+                        O = tick() + 0.35
                     end
                 else
-                    w._FarmStatus = ("Searching for: %s"):format(table.concat(R, ", "))
+                    w._FarmStatus = ("Searching for: %s"):format(table.concat(S, ", "))
                     
                     if w.AutofarmMovement == "Fly" and FarmMove.flyActive() then
                         _fmBV.Velocity = Vector3.zero
@@ -805,19 +862,19 @@ function M.start()
                 end
 
                 
-                if P % 5 == 0 then
-                    local V = #I.allWithHumanoid()
-                    local W = 0
-                    for X, Y in ipairs(R) do
-                        W = W + #I.allByName(Y)
+                if Q % 5 == 0 then
+                    local W = #J.allWithHumanoid()
+                    local X = 0
+                    for Y, Z in ipairs(S) do
+                        X = X + #J.allByName(Z)
                     end
-                    w._TargetsFound = V
-                    w._NamedFound   = W
+                    w._TargetsFound = W
+                    w._NamedFound   = X
                 end
 
-                if w.AutoLoot and tick() >= O then
-                    J.collectNearby()
-                    O = tick() + 3
+                if w.AutoLoot and tick() >= P then
+                    K.collectNearby()
+                    P = tick() + 3
                 end
             else
                 w._FarmStatus = "No character"
@@ -834,54 +891,54 @@ end
 
 
 
-local N = {}
+local O = {}
 
-function N.start()
+function O.start()
     D.spawn(function()
-        local O = 0
+        local P = 0
         while w.Alive do
             if w.AutoAttackNearby or w.AutoAttack or w.AutoTPToPlayer then
-                local P = G.root()
-                if P then
-                    local Q
+                local Q = G.root()
+                if Q then
+                    local R
                     if w.AutoTPToPlayer and w.TargetPlayer ~= "" then
-                        local R = d:FindFirstChild(w.TargetPlayer)
-                        if R and R.Character then
-                            local S = R.Character:FindFirstChild("HumanoidRootPart")
-                            local T = R.Character:FindFirstChildOfClass("Humanoid")
-                            if S and T then
-                                local U = CFrame.new(S.Position) * CFrame.new(w.OffsetX, w.OffsetY, 0)
-                                U = CFrame.lookAt(U.Position, S.Position)
-                                pcall(function() P.CFrame = U end)
+                        local S = d:FindFirstChild(w.TargetPlayer)
+                        if S and S.Character then
+                            local T = S.Character:FindFirstChild("HumanoidRootPart")
+                            local U = S.Character:FindFirstChildOfClass("Humanoid")
+                            if T and U then
+                                local V = CFrame.new(T.Position) * CFrame.new(w.OffsetX, w.OffsetY, 0)
+                                V = CFrame.lookAt(V.Position, T.Position)
+                                pcall(function() Q.CFrame = V end)
                                 if w.AutoAttack then
-                                    Q = { model = R.Character, hum = T, root = S }
+                                    R = { model = S.Character, hum = U, root = T }
                                 end
                             end
                         end
                     end
 
-                    if not Q and w.AutoAttackNearby then
-                        Q = I.bestByPriority({ "Players" })
+                    if not R and w.AutoAttackNearby then
+                        R = J.bestByPriority({ "Players" })
                     end
-                    if not Q and w.AutoAttack then
-                        Q = I.bestByPriority(w.FarmPriority)
+                    if not R and w.AutoAttack then
+                        R = J.bestByPriority(w.FarmPriority)
                     end
 
-                    if Q and tick() >= O then
-                        local R = D.distance(P, Q.root)
-                        if R <= w.Range then
-                            local S = G.humanoid()
-                            if not S or S.Health >= w.DisengageAt or w.DisengageAt == 0 then
-                                J.fireAt(Q)
-                                O = tick() + 0.35
+                    if R and tick() >= P then
+                        local S = D.distance(Q, R.root)
+                        if S <= w.Range then
+                            local T = G.humanoid()
+                            if not T or T.Health >= w.DisengageAt or w.DisengageAt == 0 then
+                                K.fireAt(R)
+                                P = tick() + 0.35
                             end
                         end
                     end
 
-                    if w.TargetPOV and Q and Q.root then
+                    if w.TargetPOV and R and R.root then
                         pcall(function()
                             p.CameraType    = Enum.CameraType.Scriptable
-                            p.CFrame        = CFrame.new(Q.root.Position + Vector3.new(0, 8, 12), Q.root.Position)
+                            p.CFrame        = CFrame.new(R.root.Position + Vector3.new(0, 8, 12), R.root.Position)
                         end)
                     end
                 end
@@ -898,138 +955,138 @@ end
 
 
 
-local O = {}
+local P = {}
 
-function O.clearAll()
-    for P, Q in pairs(y) do
-        if Q and Q.Parent then Q:Destroy() end
-        y[P] = nil
+function P.clearAll()
+    for Q, R in pairs(y) do
+        if R and R.Parent then R:Destroy() end
+        y[Q] = nil
     end
 end
 
-function O.applyHighlight(P, Q)
-    if y[P] then return end
-    local R = Instance.new("Highlight")
-    R.Adornee = P
-    R.FillColor = Q
-    R.OutlineColor = Q
-    R.FillTransparency    = w.FillTransparency
-    R.OutlineTransparency = w.OutlineTransparency
-    R.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    R.Parent = P
-    y[P] = R
+function P.applyHighlight(Q, R)
+    if y[Q] then return end
+    local S = Instance.new("Highlight")
+    S.Adornee = Q
+    S.FillColor = R
+    S.OutlineColor = R
+    S.FillTransparency    = w.FillTransparency
+    S.OutlineTransparency = w.OutlineTransparency
+    S.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    S.Parent = Q
+    y[Q] = S
 end
 
-function O.refresh()
+function P.refresh()
     
-    for P, Q in pairs(y) do
-        if Q and Q.Parent then
-            Q.FillTransparency    = w.FillTransparency
-            Q.OutlineTransparency = w.OutlineTransparency
+    for Q, R in pairs(y) do
+        if R and R.Parent then
+            R.FillTransparency    = w.FillTransparency
+            R.OutlineTransparency = w.OutlineTransparency
         end
     end
 end
 
-function O.start()
+function P.start()
     D.spawn(function()
         while w.Alive do
             
-            for P, Q in pairs(y) do
-                if not P.Parent or not Q.Parent then
-                    if Q.Parent then Q:Destroy() end
-                    y[P] = nil
+            for Q, R in pairs(y) do
+                if not Q.Parent or not R.Parent then
+                    if R.Parent then R:Destroy() end
+                    y[Q] = nil
                 end
             end
 
             if w.GoatESP or w.AmberESP then
-                for P, Q in ipairs(I.allWithHumanoid()) do
-                    local R = Q.model.Name:lower()
-                    if w.GoatESP and (R:find("goat", 1, true) or R:find("dino", 1, true) or d:GetPlayerFromCharacter(Q.model) == nil) then
-                        O.applyHighlight(Q.model, w.GoatESPColor)
+                for Q, R in ipairs(J.allWithHumanoid()) do
+                    local S = R.model.Name:lower()
+                    if w.GoatESP and (S:find("goat", 1, true) or S:find("dino", 1, true) or d:GetPlayerFromCharacter(R.model) == nil) then
+                        P.applyHighlight(R.model, w.GoatESPColor)
                     end
                 end
                 if w.AmberESP then
-                    for P, Q in ipairs(h:GetDescendants()) do
-                        if Q:IsA("Model") or Q:IsA("BasePart") then
-                            local R = Q.Name:lower()
-                            if R:find("amber", 1, true) and not y[Q] then
-                                O.applyHighlight(Q, w.AmberESPColor)
+                    for Q, R in ipairs(h:GetDescendants()) do
+                        if R:IsA("Model") or R:IsA("BasePart") then
+                            local S = R.Name:lower()
+                            if S:find("amber", 1, true) and not y[R] then
+                                P.applyHighlight(R, w.AmberESPColor)
                             end
                         end
                     end
                 end
             else
-                O.clearAll()
+                P.clearAll()
             end
             task.wait(0.5)
         end
-        O.clearAll()
+        P.clearAll()
     end, "ESP.loop")
 end
 
 
 
 
-local P = {}
-local Q, R, S
+local Q = {}
+local R, S, T
 
-function P.enable()
-    local T = G.get(); if not T then return end
-    local U = G.root(); if not U then return end
-    local V = G.humanoid()
+function Q.enable()
+    local U = G.get(); if not U then return end
+    local V = G.root(); if not V then return end
+    local W = G.humanoid()
 
-    P.disable()
-    S = {}
+    Q.disable()
+    T = {}
 
-    Q = Instance.new("BodyVelocity")
-    Q.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    Q.Velocity = Vector3.zero
-    Q.Parent = U
+    R = Instance.new("BodyVelocity")
+    R.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    R.Velocity = Vector3.zero
+    R.Parent = V
 
-    R = Instance.new("BodyGyro")
-    R.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    R.P = 1000
-    R.CFrame = U.CFrame
-    R.Parent = U
+    S = Instance.new("BodyGyro")
+    S.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    S.P = 1000
+    S.CFrame = V.CFrame
+    S.Parent = V
 
-    if V then V.PlatformStand = true end
+    if W then W.PlatformStand = true end
 
-    D.conn("fly_input_began", f.InputBegan:Connect(function(W, X)
-        if X then return end
-        S[W.KeyCode] = true
+    D.conn("fly_input_began", f.InputBegan:Connect(function(X, Y)
+        if Y then return end
+        T[X.KeyCode] = true
     end))
-    D.conn("fly_input_ended", f.InputEnded:Connect(function(W)
-        S[W.KeyCode] = false
+    D.conn("fly_input_ended", f.InputEnded:Connect(function(X)
+        T[X.KeyCode] = false
     end))
 
     D.conn("fly_step", e.RenderStepped:Connect(function()
-        if not (w.Fly and Q and Q.Parent) then return end
-        local W = p
-        if not W then return end
-        local X = Vector3.zero
-        if S[Enum.KeyCode.W]      then X = X + W.CFrame.LookVector end
-        if S[Enum.KeyCode.S]      then X = X - W.CFrame.LookVector end
-        if S[Enum.KeyCode.A]      then X = X - W.CFrame.RightVector end
-        if S[Enum.KeyCode.D]      then X = X + W.CFrame.RightVector end
-        if S[Enum.KeyCode.Space]  then X = X + Vector3.new(0, 1, 0) end
-        if S[Enum.KeyCode.LeftControl] then X = X - Vector3.new(0, 1, 0) end
+        if not (w.Fly and R and R.Parent) then return end
+        local X = p
+        if not X then return end
+        local Y = Vector3.zero
+        if T[Enum.KeyCode.W]      then Y = Y + X.CFrame.LookVector end
+        if T[Enum.KeyCode.S]      then Y = Y - X.CFrame.LookVector end
+        if T[Enum.KeyCode.A]      then Y = Y - X.CFrame.RightVector end
+        if T[Enum.KeyCode.D]      then Y = Y + X.CFrame.RightVector end
+        if T[Enum.KeyCode.Space]  then Y = Y + Vector3.new(0, 1, 0) end
+        if T[Enum.KeyCode.LeftControl] then Y = Y - Vector3.new(0, 1, 0) end
 
-        if X.Magnitude > 0 then X = X.Unit * w.FlySpeed
-        else X = Vector3.zero end
-        Q.Velocity = X
-        R.CFrame = W.CFrame
+        if Y.Magnitude > 0 then Y = Y.Unit * w.FlySpeed
+        else Y = Vector3.zero end
+        R.Velocity = Y
+        S.CFrame = X.CFrame
     end))
 end
 
-function P.disable()
+function Q.disable()
     D.disconnect("fly_input_began")
     D.disconnect("fly_input_ended")
     D.disconnect("fly_step")
-    if Q then pcall(function() Q:Destroy() end); Q = nil end
     if R then pcall(function() R:Destroy() end); R = nil end
-    local T = G.humanoid()
-    if T then pcall(function() T.PlatformStand = false end) end
-    S = nil
+    if S then pcall(function() S:Destroy() end); S = nil end
+    local U = G.humanoid()
+    if U then pcall(function() U.PlatformStand = false end) end
+    T = nil
 end
 
 
@@ -1037,90 +1094,90 @@ end
 
 
 
-local T = {}
-local U, V
+local U = {}
+local V, W
 
-function T.startFly()
-    local W = G.root(); if not W then return end
-    T.stopFly()
-    U = Instance.new("BodyVelocity")
-    U.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    U.Velocity = Vector3.zero
-    U.Parent = W
-    V = Instance.new("BodyGyro")
-    V.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    V.P = 1000
-    V.CFrame = W.CFrame
-    V.Parent = W
-    local X = G.humanoid()
-    if X then X.PlatformStand = true end
+function U.startFly()
+    local X = G.root(); if not X then return end
+    U.stopFly()
+    V = Instance.new("BodyVelocity")
+    V.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    V.Velocity = Vector3.zero
+    V.Parent = X
+    W = Instance.new("BodyGyro")
+    W.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    W.P = 1000
+    W.CFrame = X.CFrame
+    W.Parent = X
+    local Y = G.humanoid()
+    if Y then Y.PlatformStand = true end
 end
 
-function T.stopFly()
-    if U then pcall(function() U:Destroy() end); U = nil end
+function U.stopFly()
     if V then pcall(function() V:Destroy() end); V = nil end
+    if W then pcall(function() W:Destroy() end); W = nil end
     
     if not w.Fly then
-        local W = G.humanoid()
-        if W then pcall(function() W.PlatformStand = false end) end
+        local X = G.humanoid()
+        if X then pcall(function() X.PlatformStand = false end) end
     end
 end
 
 
 
-function T.flyActive()
-    return U ~= nil and U.Parent ~= nil
+function U.flyActive()
+    return V ~= nil and V.Parent ~= nil
 end
 
 
 
-function T.flyToward(W)
-    local X = G.root(); if not X then return end
-    if not T.flyActive() then T.startFly() end
-    if not U then return end
-    local Y = W - X.Position
-    local Z = Y.Magnitude
-    if Z < 0.5 then
-        U.Velocity = Vector3.zero
+function U.flyToward(X)
+    local Y = G.root(); if not Y then return end
+    if not U.flyActive() then U.startFly() end
+    if not V then return end
+    local Z = X - Y.Position
+    local _ = Z.Magnitude
+    if _ < 0.5 then
+        V.Velocity = Vector3.zero
         return
     end
-    U.Velocity = Y.Unit * w.FlySpeed
-    if V then V.CFrame = CFrame.lookAt(X.Position, W) end
+    V.Velocity = Z.Unit * w.FlySpeed
+    if W then W.CFrame = CFrame.lookAt(Y.Position, X) end
 end
 
 
-function T.tpTo(W)
-    local X = G.root(); if not X then return end
-    local Y = CFrame.new(W) * CFrame.new(w.OffsetX, w.OffsetY, math.min(8, w.Range * 0.2))
-    Y = CFrame.lookAt(Y.Position, W)
-    pcall(function() X.CFrame = Y end)
+function U.tpTo(X)
+    local Y = G.root(); if not Y then return end
+    local Z = CFrame.new(X) * CFrame.new(w.OffsetX, w.OffsetY, math.min(8, w.Range * 0.2))
+    Z = CFrame.lookAt(Z.Position, X)
+    pcall(function() Y.CFrame = Z end)
 end
 
 
-function T.walkTo(W)
-    local X = G.humanoid()
-    if X then pcall(function() X:MoveTo(W) end) end
+function U.walkTo(X)
+    local Y = G.humanoid()
+    if Y then pcall(function() Y:MoveTo(X) end) end
 end
 
 
 
 
-local W = {}
+local X = {}
 
-function W.respawn()
-    local X = G.humanoid()
-    if X then
-        X.Health = 0
+function X.respawn()
+    local Y = G.humanoid()
+    if Y then
+        Y.Health = 0
     else
         pcall(function() q.Character:BreakJoints() end)
     end
 end
 
-function W.openMenu()
-    local X = H.remoteByKeywords(v.MenuKeywords)
-    if X then
+function X.openMenu()
+    local Y = H.remoteByKeywords(v.MenuKeywords)
+    if Y then
         pcall(function()
-            if X:IsA("RemoteEvent") then X:FireServer() else X:InvokeServer() end
+            if Y:IsA("RemoteEvent") then Y:FireServer() else Y:InvokeServer() end
         end)
         return
     end
@@ -1128,11 +1185,11 @@ function W.openMenu()
     pcall(function() k:CaptureController() end)
 end
 
-function W.attachAutoRespawn()
-    D.conn("char_died_watch", q.CharacterAdded:Connect(function(X)
-        local Y = X:WaitForChild("Humanoid", 5)
-        if not Y then return end
-        Y.Died:Connect(function()
+function X.attachAutoRespawn()
+    D.conn("char_died_watch", q.CharacterAdded:Connect(function(Y)
+        local Z = Y:WaitForChild("Humanoid", 5)
+        if not Z then return end
+        Z.Died:Connect(function()
             if not w.AutoRespawn then return end
             task.wait(w.RespawnDelay)
             if not w.AutoRespawn then return end
@@ -1145,52 +1202,52 @@ end
 
 
 
-local X = {}
+local Y = {}
 
-function X.fetchServers()
-    local Y = game.PlaceId
-    local Z = ("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100"):format(Y)
-    local _ = c({ Url = Z, Method = "GET" })
-    if not _ or _.StatusCode ~= 200 then return {} end
-    local aa = E.decode(_.Body or "")
-    local ab = {}
-    for ac, ad in ipairs(aa.data or {}) do
-        if ad.id and ad.id ~= game.JobId then
-            ab[#ab + 1] = { id = ad.id, playing = ad.playing or 0, max = ad.maxPlayers or 0 }
+function Y.fetchServers()
+    local Z = game.PlaceId
+    local _ = ("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100"):format(Z)
+    local aa = c({ Url = _, Method = "GET" })
+    if not aa or aa.StatusCode ~= 200 then return {} end
+    local ab = E.decode(aa.Body or "")
+    local ac = {}
+    for ad, ae in ipairs(ab.data or {}) do
+        if ae.id and ae.id ~= game.JobId then
+            ac[#ac + 1] = { id = ae.id, playing = ae.playing or 0, max = ae.maxPlayers or 0 }
         end
     end
-    return ab
+    return ac
 end
 
-function X.joinJobId(aa)
+function Y.joinJobId(aa)
     if not aa or aa == "" then return end
     pcall(function() n:TeleportToPlaceInstance(game.PlaceId, aa, q) end)
 end
 
-function X.rejoin()
+function Y.rejoin()
     pcall(function() n:TeleportToPlaceInstance(game.PlaceId, game.JobId, q) end)
 end
 
-function X.randomHop()
-    local aa = X.fetchServers()
+function Y.randomHop()
+    local aa = Y.fetchServers()
     if #aa == 0 then F.send("No servers found.") return end
     local ab = aa[math.random(1, #aa)]
-    X.joinJobId(ab.id)
+    Y.joinJobId(ab.id)
 end
 
-function X.attachWatchers()
+function Y.attachWatchers()
     
     D.conn("friend_watch", d.PlayerAdded:Connect(function(aa)
         if not w.HopOnFriend then return end
         local ab, ac = pcall(function() return q:IsFriendsWith(aa.UserId) end)
-        if ab and ac then X.randomHop() end
+        if ab and ac then Y.randomHop() end
     end))
 
     
     D.spawn(function()
         while w.Alive do
             if w.HopOnPlayerCount > 0 and #d:GetPlayers() <= w.HopOnPlayerCount then
-                X.randomHop()
+                Y.randomHop()
                 task.wait(10)
             end
             task.wait(5)
@@ -1246,15 +1303,15 @@ function ab.send(ad)
     if not ad and w.WebhookLink == "" then return end
     if w.WebhookLink == "" then F.send("Set a webhook URL first.") return end
 
-    local Y = w.StartTime and (os.time() - w.StartTime) or 0
-    local Z    = Y > 0 and (w.CoinsGained / (Y / 60)) or 0
+    local ae = w.StartTime and (os.time() - w.StartTime) or 0
+    local Z    = ae > 0 and (w.CoinsGained / (ae / 60)) or 0
 
     local _ = w.WebhookAnonymous and "Anonymous" or q.Name
-    local ae       = w.WebhookTimezone
-    local af   = os.time() + ae * 3600
-    local ag   = os.date("!%Y-%m-%d %H:%M:%S", af) .. (" UTC%+d"):format(ae)
+    local af       = w.WebhookTimezone
+    local ag   = os.time() + af * 3600
+    local ah   = os.date("!%Y-%m-%d %H:%M:%S", ag) .. (" UTC%+d"):format(af)
 
-    local ah = {
+    local ai = {
         username = "NameHub JB",
         embeds = {{
             title  = "NameHub Jurassic Blocky — Stats",
@@ -1262,10 +1319,10 @@ function ab.send(ad)
             fields = {
                 { name = "User",          value = _,                                inline = true },
                 { name = "Server",        value = ("`%s`"):format(game.JobId or "n/a"),    inline = true },
-                { name = "Time",          value = ag,                                  inline = false },
+                { name = "Time",          value = ah,                                  inline = false },
                 { name = "Coins Gained",  value = tostring(w.CoinsGained),                 inline = true },
                 { name = "Rate (per min)",value = string.format("%.1f", Z),             inline = true },
-                { name = "Elapsed",       value = D.fmtTime(Y),                      inline = true },
+                { name = "Elapsed",       value = D.fmtTime(ae),                      inline = true },
                 { name = "Auto-Farm",     value = w.Autofarm and "ON" or "OFF",            inline = true },
                 { name = "Target",        value = w.FarmTarget,                            inline = true },
                 { name = "Dino",          value = w.AutofarmDino,                          inline = true },
@@ -1273,16 +1330,16 @@ function ab.send(ad)
             footer = { text = a },
         }},
     }
-    local ai = E.encode(ah)
-    local aj = pcall(function()
+    local aj = E.encode(ai)
+    local ak = pcall(function()
         c({
             Url     = w.WebhookLink,
             Method  = "POST",
             Headers = { ["Content-Type"] = "application/json" },
-            Body    = ai,
+            Body    = aj,
         })
     end)
-    if aj then
+    if ak then
         ac = tick()
         if ad then F.send("Webhook sent.") end
     elseif ad then
@@ -1416,7 +1473,7 @@ local af = {}
 
 local ag = {
     "Autofarm", "FarmTarget", "FarmPriority", "Speed", "AutofarmDino", "SkipPlayers", "AutoLoot",
-    "AutofarmMovement", "StopDistance",
+    "AutofarmMovement", "StopDistance", "ManualAttackRemote",
     "GoatESP", "GoatESPColor", "AmberESP", "AmberESPColor", "NoPromptDelay",
     "OutlineTransparency", "FillTransparency",
     "Fly", "FlySpeed", "RespawnDelay", "AutoRespawn", "Anchored",
@@ -1433,22 +1490,22 @@ local ah=function()
 
 local ah = {}
     for ai, aj in ipairs(ag) do
-        local Y = w[aj]
-        if typeof(Y) == "Color3" then
-            ah[aj] = { _c3 = true, v = D.color3ToTable(Y) }
+        local ak = w[aj]
+        if typeof(ak) == "Color3" then
+            ah[aj] = { _c3 = true, v = D.color3ToTable(ak) }
         else
-            ah[aj] = Y
+            ah[aj] = ak
         end
     end
     return ah
 end local ai=function(
 
 ai)    
-for aj, Y in pairs(ai or {}) do
-        if type(Y) == "table" and Y._c3 then
-            w[aj] = D.tableToColor3(Y.v)
+for aj, ak in pairs(ai or {}) do
+        if type(ak) == "table" and ak._c3 then
+            w[aj] = D.tableToColor3(ak.v)
         else
-            w[aj] = Y
+            w[aj] = ak
         end
     end
 end
@@ -1462,9 +1519,9 @@ end
 function af.load(aj)
     if not aj or aj == "" then return end
     if not b.isfile(s .. "/" .. aj .. ".json") then F.send("No config: " .. aj) return end
-    local Y = ""
-    pcall(function() Y = b.readfile(s .. "/" .. aj .. ".json") end)
-    ai(E.decode(Y))
+    local ak = ""
+    pcall(function() ak = b.readfile(s .. "/" .. aj .. ".json") end)
+    ai(E.decode(ak))
     
     for Z, _ in pairs(z) do
         if _.refresh then pcall(_.refresh) end
@@ -1482,11 +1539,11 @@ end
 
 function af.list()
     local aj = {}
-    local Y, Z = pcall(b.listfiles, s)
-    if not Y or type(Z) ~= "table" then return aj end
-    for _, ak in ipairs(Z) do
-        local al = ak:match("([^/\\]+)%.json$")
-        if al then aj[#aj + 1] = al end
+    local ak, Z = pcall(b.listfiles, s)
+    if not ak or type(Z) ~= "table" then return aj end
+    for _, al in ipairs(Z) do
+        local am = al:match("([^/\\]+)%.json$")
+        if am then aj[#aj + 1] = am end
     end
     table.sort(aj)
     return aj
@@ -1518,8 +1575,8 @@ function af.importString(aj)
     local ak = E.decode(aj)
     if not ak or not next(ak) then F.send("Invalid import data.") return end
     ai(ak)
-    for al, Y in pairs(z) do
-        if Y.refresh then pcall(Y.refresh) end
+    for al, am in pairs(z) do
+        if am.refresh then pcall(am.refresh) end
     end
     ae.apply()
     if C and C.uiScale then C.uiScale.Scale = w.UIScale or 1 end
@@ -1532,10 +1589,10 @@ end
 
 local aj = {}
 local ak=function(
-ak, al, Y)    
+ak, al, am)    
 local Z = Instance.new(ak)
-    for _, am in pairs(al or {}) do Z[_] = am end
-    if Y then for am, _ in ipairs(Y) do _.Parent = Z end end
+    for _, an in pairs(al or {}) do Z[_] = an end
+    if am then for an, _ in ipairs(am) do _.Parent = Z end end
     return Z
 end local al=function()
 
@@ -1544,17 +1601,17 @@ return Enum.Font[w.FontFace] or Enum.Font.Gotham end
 
 function aj.newWindow(am)
     am = am or {}
-    local Y = ak("ScreenGui", {
+    local an = ak("ScreenGui", {
         Name = D.rand("_NHJB_"),
         IgnoreGuiInset = true,
         ResetOnSpawn   = false,
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         DisplayOrder   = 2000000,
     })
-    local Z = pcall(function() Y.Parent = m end)
+    local Z = pcall(function() an.Parent = m end)
     if not Z then
         local _ = q:WaitForChild("PlayerGui", 5)
-        if _ then Y.Parent = _ end
+        if _ then an.Parent = _ end
     end
 
     local _ = ak("Frame", {
@@ -1564,21 +1621,21 @@ function aj.newWindow(am)
         BackgroundColor3 = w.BgColor,
         BorderSizePixel  = 0,
         Active           = true,
-        Parent           = Y,
+        Parent           = an,
     })
     ak("UICorner", { CornerRadius = UDim.new(0, 10), Parent = _ })
-    local an = ak("UIStroke", { Color = w.OutlineColor, Transparency = 0.6, Thickness = 1, Parent = _ })
+    local ao = ak("UIStroke", { Color = w.OutlineColor, Transparency = 0.6, Thickness = 1, Parent = _ })
 
     
     
     
     
-    local ao = Instance.new("UIScale")
-    ao.Scale  = w.UIScale or 1
-    ao.Parent = _
+    local ap = Instance.new("UIScale")
+    ap.Scale  = w.UIScale or 1
+    ap.Parent = _
 
     
-    local ap = ak("TextLabel", {
+    local aq = ak("TextLabel", {
         Parent = _,
         AnchorPoint = Vector2.new(1, 0),
         Position = UDim2.new(1, -16, 0, 16),
@@ -1590,24 +1647,24 @@ function aj.newWindow(am)
         TextColor3 = w.FontColor,
     })
     
-    local aq = ak("Frame", {
+    local ar = ak("Frame", {
         Parent = _,
         Size = UDim2.new(0, 150, 1, 0),
         BackgroundColor3 = w.MainColor,
         BorderSizePixel = 0,
     })
-    ak("UICorner", { CornerRadius = UDim.new(0, 10), Parent = aq })
+    ak("UICorner", { CornerRadius = UDim.new(0, 10), Parent = ar })
     
     ak("Frame", {
-        Parent = aq,
+        Parent = ar,
         Position = UDim2.new(1, -12, 0, 0),
         Size = UDim2.new(0, 12, 1, 0),
         BackgroundColor3 = w.MainColor,
         BorderSizePixel = 0,
     })
 
-    local ar = ak("TextLabel", {
-        Parent = aq,
+    local as = ak("TextLabel", {
+        Parent = ar,
         Size = UDim2.new(1, -20, 0, 36),
         Position = UDim2.fromOffset(20, 18),
         BackgroundTransparency = 1,
@@ -1618,37 +1675,37 @@ function aj.newWindow(am)
         TextXAlignment = Enum.TextXAlignment.Left,
     })
 
-    local as = ak("Frame", {
-        Parent = aq,
+    local at = ak("Frame", {
+        Parent = ar,
         Position = UDim2.fromOffset(0, 70),
         Size = UDim2.new(1, 0, 1, -90),
         BackgroundTransparency = 1,
     })
-    local at = ak("UIListLayout", {
-        Parent = as,
+    local au = ak("UIListLayout", {
+        Parent = at,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 4),
     })
 
     
-    local au = ak("Frame", {
+    local av = ak("Frame", {
         Parent = _,
         Position = UDim2.new(0, 150, 0, 0),
         Size = UDim2.new(1, -150, 0, 60),
         BackgroundTransparency = 1,
     })
 
-    local av = ak("Frame", {
-        Parent = au,
+    local aw = ak("Frame", {
+        Parent = av,
         Position = UDim2.fromOffset(20, 16),
         Size = UDim2.new(1, -80, 0, 28),
         BackgroundColor3 = w.MainColor,
         BorderSizePixel = 0,
     })
-    ak("UICorner", { CornerRadius = UDim.new(0, 6), Parent = av })
+    ak("UICorner", { CornerRadius = UDim.new(0, 6), Parent = aw })
 
-    local aw = ak("TextLabel", {
-        Parent = av,
+    local ax = ak("TextLabel", {
+        Parent = aw,
         Size = UDim2.fromOffset(28, 28),
         Position = UDim2.fromOffset(2, 0),
         BackgroundTransparency = 1,
@@ -1658,8 +1715,8 @@ function aj.newWindow(am)
         TextColor3 = w.FontColor,
     })
 
-    local ax = ak("TextBox", {
-        Parent = av,
+    local ay = ak("TextBox", {
+        Parent = aw,
         Position = UDim2.fromOffset(30, 0),
         Size = UDim2.new(1, -36, 1, 0),
         BackgroundTransparency = 1,
@@ -1680,55 +1737,55 @@ function aj.newWindow(am)
     
     
     do
-        local ay, az, aA
-local aB=function(
-aB, aC)            
-if not aC or not aC.Parent then return false end
-            local aD, aE = aC.AbsolutePosition, aC.AbsoluteSize
-            return aB.X >= aD.X and aB.X <= aD.X + aE.X
-               and aB.Y >= aD.Y and aB.Y <= aD.Y + aE.Y
-end local aC=function(
-
+        local az, aA, aB
+local aC=function(
 aC, aD)            
-aC.Active = true
-            aC.InputBegan:Connect(function(aE)
-                if aE.UserInputType ~= Enum.UserInputType.MouseButton1
-                   and aE.UserInputType ~= Enum.UserInputType.Touch then return end
-                local aF = aE.Position
-                if aD then
-                    for aG, aH in ipairs(aD) do
-                        if aB(aF, aH) then return end
+if not aD or not aD.Parent then return false end
+            local aE, aF = aD.AbsolutePosition, aD.AbsoluteSize
+            return aC.X >= aE.X and aC.X <= aE.X + aF.X
+               and aC.Y >= aE.Y and aC.Y <= aE.Y + aF.Y
+end local aD=function(
+
+aD, aE)            
+aD.Active = true
+            aD.InputBegan:Connect(function(aF)
+                if aF.UserInputType ~= Enum.UserInputType.MouseButton1
+                   and aF.UserInputType ~= Enum.UserInputType.Touch then return end
+                local aG = aF.Position
+                if aE then
+                    for aH, aI in ipairs(aE) do
+                        if aC(aG, aI) then return end
                     end
                 end
-                ay  = true
-                az = Vector2.new(aF.X, aF.Y)
-                aA  = _.Position
-                aE.Changed:Connect(function()
-                    if aE.UserInputState == Enum.UserInputState.End then ay = false end
+                az  = true
+                aA = Vector2.new(aG.X, aG.Y)
+                aB  = _.Position
+                aF.Changed:Connect(function()
+                    if aF.UserInputState == Enum.UserInputState.End then az = false end
                 end)
             end)
 end
         
-aC(ap)
-        aC(ar)
-        aC(au, { av })
-        aC(aq, { as })   
+aD(aq)
+        aD(as)
+        aD(av, { aw })
+        aD(ar, { at })   
 
-        f.InputChanged:Connect(function(aD)
-            if not ay then return end
-            if aD.UserInputType ~= Enum.UserInputType.MouseMovement
-               and aD.UserInputType ~= Enum.UserInputType.Touch then return end
-            local aE = aD.Position
-            local aF = Vector2.new(aE.X, aE.Y) - az
+        f.InputChanged:Connect(function(aE)
+            if not az then return end
+            if aE.UserInputType ~= Enum.UserInputType.MouseMovement
+               and aE.UserInputType ~= Enum.UserInputType.Touch then return end
+            local aF = aE.Position
+            local aG = Vector2.new(aF.X, aF.Y) - aA
             _.Position = UDim2.new(
-                aA.X.Scale, aA.X.Offset + aF.X,
-                aA.Y.Scale, aA.Y.Offset + aF.Y
+                aB.X.Scale, aB.X.Offset + aG.X,
+                aB.Y.Scale, aB.Y.Offset + aG.Y
             )
         end)
     end
 
     
-    local ay = ak("Frame", {
+    local az = ak("Frame", {
         Parent = _,
         Position = UDim2.new(0, 150, 0, 60),
         Size = UDim2.new(1, -150, 1, -84),
@@ -1736,14 +1793,14 @@ aC(ap)
     })
 
     
-    local az = ak("Frame", {
+    local aA = ak("Frame", {
         Parent = _,
         Position = UDim2.new(0, 150, 1, -24),
         Size = UDim2.new(1, -150, 0, 24),
         BackgroundTransparency = 1,
     })
     ak("TextLabel", {
-        Parent = az,
+        Parent = aA,
         Size = UDim2.new(1, -30, 1, 0),
         BackgroundTransparency = 1,
         Text = v.SubBrand,
@@ -1751,8 +1808,8 @@ aC(ap)
         TextSize = 12,
         TextColor3 = Color3.fromRGB(120, 130, 140),
     })
-    local aA = ak("TextLabel", {
-        Parent = az,
+    local aB = ak("TextLabel", {
+        Parent = aA,
         AnchorPoint = Vector2.new(1, 0),
         Position = UDim2.new(1, -8, 0, 0),
         Size = UDim2.fromOffset(20, 20),
@@ -1765,127 +1822,127 @@ aC(ap)
     })
     
     do
-        local aB, aC, aD
-        aA.InputBegan:Connect(function(aE)
-            if aE.UserInputType == Enum.UserInputType.MouseButton1 or aE.UserInputType == Enum.UserInputType.Touch then
-                aB = true
-                aC = aE.Position
-                aD = _.Size
-                aE.Changed:Connect(function()
-                    if aE.UserInputState == Enum.UserInputState.End then aB = false end
+        local aC, aD, aE
+        aB.InputBegan:Connect(function(aF)
+            if aF.UserInputType == Enum.UserInputType.MouseButton1 or aF.UserInputType == Enum.UserInputType.Touch then
+                aC = true
+                aD = aF.Position
+                aE = _.Size
+                aF.Changed:Connect(function()
+                    if aF.UserInputState == Enum.UserInputState.End then aC = false end
                 end)
             end
         end)
-        f.InputChanged:Connect(function(aE)
-            if aB and (aE.UserInputType == Enum.UserInputType.MouseMovement or aE.UserInputType == Enum.UserInputType.Touch) then
-                local aF = aE.Position - aC
+        f.InputChanged:Connect(function(aF)
+            if aC and (aF.UserInputType == Enum.UserInputType.MouseMovement or aF.UserInputType == Enum.UserInputType.Touch) then
+                local aG = aF.Position - aD
                 
                 
-                local aG = (ao.Scale > 0) and ao.Scale or 1
-                _.Size = UDim2.new(0, math.max(560, aD.X.Offset + aF.X / aG),
-                                     0, math.max(380, aD.Y.Offset + aF.Y / aG))
+                local aH = (ap.Scale > 0) and ap.Scale or 1
+                _.Size = UDim2.new(0, math.max(560, aE.X.Offset + aG.X / aH),
+                                     0, math.max(380, aE.Y.Offset + aG.Y / aH))
             end
         end)
     end
 
-    local aB = {
-        gui = Y, win = _, sidebar = aq, pageList = as,
-        content = ay, header = au, searchBox = ax, dragHandle = ap,
+    local aC = {
+        gui = an, win = _, sidebar = ar, pageList = at,
+        content = az, header = av, searchBox = ay, dragHandle = aq,
         pages = {},   
         active = nil,
-        winStroke = an, resize = aA,
-        uiScale = ao,
+        winStroke = ao, resize = aB,
+        uiScale = ap,
     }
 
     
     table.insert(z, {
         themeUpdate = function()
             _.BackgroundColor3 = w.BgColor
-            an.Color = w.OutlineColor
-            aq.BackgroundColor3 = w.MainColor
-            for aC, aD in ipairs(aq:GetChildren()) do
-                if aD:IsA("Frame") then aD.BackgroundColor3 = w.MainColor end
+            ao.Color = w.OutlineColor
+            ar.BackgroundColor3 = w.MainColor
+            for aD, aE in ipairs(ar:GetChildren()) do
+                if aE:IsA("Frame") then aE.BackgroundColor3 = w.MainColor end
             end
-            ar.TextColor3 = w.AccentColor
-            ar.Font = al()
-            av.BackgroundColor3 = w.MainColor
-            aw.TextColor3 = w.FontColor
+            as.TextColor3 = w.AccentColor
+            as.Font = al()
+            aw.BackgroundColor3 = w.MainColor
             ax.TextColor3 = w.FontColor
-            ax.Font = al()
-            ap.TextColor3 = w.FontColor
-            aA.TextColor3 = w.FontColor
-            for aC, aD in pairs(aB.pages) do
-                if aD.refreshTheme then pcall(aD.refreshTheme) end
+            ay.TextColor3 = w.FontColor
+            ay.Font = al()
+            aq.TextColor3 = w.FontColor
+            aB.TextColor3 = w.FontColor
+            for aD, aE in pairs(aC.pages) do
+                if aE.refreshTheme then pcall(aE.refreshTheme) end
             end
         end
     })
 
-    function aB:addPage(aC)
-        local aD = ak("TextButton", {
-            Parent = as,
-            LayoutOrder = #as:GetChildren(),
+    function aC:addPage(aD)
+        local aE = ak("TextButton", {
+            Parent = at,
+            LayoutOrder = #at:GetChildren(),
             Size = UDim2.new(1, 0, 0, 32),
             BackgroundColor3 = w.MainColor,
             BorderSizePixel = 0,
             Text = "",
             AutoButtonColor = false,
         })
-        local aE = ak("TextLabel", {
-            Parent = aD,
+        local aF = ak("TextLabel", {
+            Parent = aE,
             Size = UDim2.new(1, -30, 1, 0),
             Position = UDim2.fromOffset(20, 0),
             BackgroundTransparency = 1,
-            Text = aC,
+            Text = aD,
             Font = al(),
             TextSize = 13,
             TextColor3 = w.FontColor,
             TextXAlignment = Enum.TextXAlignment.Left,
         })
-        local aF = ak("Frame", {
-            Parent = aD,
+        local aG = ak("Frame", {
+            Parent = aE,
             Size = UDim2.new(0, 3, 0.6, 0),
             Position = UDim2.new(0, 0, 0.2, 0),
             BackgroundColor3 = w.AccentColor,
             BorderSizePixel = 0,
             Visible = false,
         })
-local aG=function()            
+local aH=function()            
 
 
-aD.BackgroundColor3 = w.MainColor
-            aE.TextColor3 = w.FontColor
-            aE.Font = al()
-            aF.BackgroundColor3 = w.AccentColor
+aE.BackgroundColor3 = w.MainColor
+            aF.TextColor3 = w.FontColor
+            aF.Font = al()
+            aG.BackgroundColor3 = w.AccentColor
 end
         
-local aH = ak("Frame", {
-            Parent = ay,
+local aI = ak("Frame", {
+            Parent = az,
             Size = UDim2.new(1, 0, 1, 0),
             BackgroundTransparency = 1,
             Visible = false,
         })
 
-        aB.pages[aC] = {
-            btn = aD, frame = aH, label = aE, indicator = aF,
-            refreshTheme = aG,
+        aC.pages[aD] = {
+            btn = aE, frame = aI, label = aF, indicator = aG,
+            refreshTheme = aH,
         }
 
-        aD.MouseButton1Click:Connect(function() aB:selectPage(aC) end)
-        if not aB.active then aB:selectPage(aC) end
-        return aH
+        aE.MouseButton1Click:Connect(function() aC:selectPage(aD) end)
+        if not aC.active then aC:selectPage(aD) end
+        return aI
     end
 
-    function aB:selectPage(aC)
-        for aD, aE in pairs(aB.pages) do
-            local aF = (aD == aC)
-            aE.frame.Visible = aF
-            aE.indicator.Visible = aF
-            aE.label.TextColor3 = aF and w.AccentColor or w.FontColor
+    function aC:selectPage(aD)
+        for aE, aF in pairs(aC.pages) do
+            local aG = (aE == aD)
+            aF.frame.Visible = aG
+            aF.indicator.Visible = aG
+            aF.label.TextColor3 = aG and w.AccentColor or w.FontColor
         end
-        aB.active = aC
+        aC.active = aD
     end
 
-    return aB
+    return aC
 end
 
 
@@ -2468,7 +2525,7 @@ if ax then ax:Destroy(); ax = nil; return end
                 TextXAlignment = Enum.TextXAlignment.Left,
                 ZIndex = 53,
             })
-            local Y = ak("TextButton", {
+            local aI = ak("TextButton", {
                 Parent = aF,
                 Size = UDim2.new(1, 0, 1, 0),
                 BackgroundTransparency = 1,
@@ -2476,11 +2533,11 @@ if ax then ax:Destroy(); ax = nil; return end
                 AutoButtonColor = false,
                 ZIndex = 54,
             })
-            Y.MouseButton1Click:Connect(function()
+            aI.MouseButton1Click:Connect(function()
                 w[ao] = w[ao] or {}
                 local Z = w[ao]
                 local _
-                for aI, aJ in ipairs(Z) do if aJ == aE then _ = aI break end end
+                for aJ, aK in ipairs(Z) do if aK == aE then _ = aJ break end end
                 if _ then table.remove(Z, _) else table.insert(Z, aE) end
                 aG.Text = D.contains(Z, aE) and "[X]" or "[ ]"
                 aw()
@@ -2787,8 +2844,8 @@ w.Alive = false
     w.AutoAttackNearby = false
     w.AutoTPToPlayer = false
 
-    P.disable()
-    O.clearAll()
+    Q.disable()
+    P.clearAll()
     D.disconnectAll()
     if p.CameraType == Enum.CameraType.Scriptable then
         pcall(function() p.CameraType = Enum.CameraType.Custom end)
@@ -2841,7 +2898,7 @@ do
         if aB then
             w.StartTime = w.StartTime or os.time()
             w.StatsCounting = true
-            M.start()
+            N.start()
         else
             G.applySpeed()
         end
@@ -2856,7 +2913,7 @@ do
     aj.dropdown(aA, "Movement Mode", "AutofarmMovement", v.MovementOptions, function(aB)
         
         
-        if aB ~= "Fly" then T.stopFly() end
+        if aB ~= "Fly" then U.stopFly() end
     end)
     aj.slider(aA, "Stop Distance (Fly/Walk only)", "StopDistance", 2, 30, 1)
     aj.slider(aA, "Speed", "Speed", 16, 200, 1, function() G.applySpeed() end)
@@ -2897,6 +2954,32 @@ do
     
     
     
+    aj.textInput(aA, "Manual Attack Remote (override)", "ManualAttackRemote",
+        "blank = auto-discover", function()
+            K.invalidateCache()
+        end)
+
+    
+    
+    
+    aj.button(aA, "Copy All Remotes to Clipboard", function()
+        local aI = H.allRemotes(600)
+        local aJ = {
+            "=== NameHub JB Remote Dump ===",
+            "Build: " .. a,
+            ("Found %d remotes across ReplicatedStorage / Character / Workspace"):format(#aI),
+            "",
+        }
+        for aK, Z in ipairs(aI) do aJ[#aJ + 1] = Z end
+        local aK = table.concat(aJ, "\n")
+        pcall(setclipboard, aK)
+        F.send(("Copied %d remotes to clipboard."):format(#aI), 5)
+    end)
+
+    
+    
+    
+    
     aj.button(aA, "Copy Diagnostics", function()
         local aI = { "=== NameHub JB Diagnostics ===", "Build: " .. a }
         aI[#aI + 1] = "FarmTarget: " .. tostring(w.FarmTarget)
@@ -2910,28 +2993,28 @@ do
         aI[#aI + 1] = "TargetsFound (name fallback): " .. tostring(w._NamedFound)
         aI[#aI + 1] = ""
         aI[#aI + 1] = "--- Nearby humanoid targets (top 20) ---"
-        for aJ, Y in ipairs(I.dump(20)) do
-            aI[#aI + 1] = Y
+        for aJ, aK in ipairs(J.dump(20)) do
+            aI[#aI + 1] = aK
         end
         aI[#aI + 1] = ""
         aI[#aI + 1] = "--- Name-fallback matches per priority ---"
         local aJ = G.root()
-        for Y, Z in ipairs(w.FarmPriority or {}) do
+        for aK, Z in ipairs(w.FarmPriority or {}) do
             aI[#aI + 1] = ("> %s:"):format(Z)
-            local _ = I.allByName(Z)
-            local aK = 0
-            for aL, aM in ipairs(_) do
-                if aK >= 10 then break end
-                local aN = aJ and D.distance(aJ, aM.root) or -1
+            local _ = J.allByName(Z)
+            local aL = 0
+            for aM, aN in ipairs(_) do
+                if aL >= 10 then break end
+                local aO = aJ and D.distance(aJ, aN.root) or -1
                 aI[#aI + 1] = ("    %-30s dist=%-6.1f hum=%s"):format(
-                    aM.model.Name:sub(1, 30), aN, aM.hum and "yes" or "no")
-                aK = aK + 1
+                    aN.model.Name:sub(1, 30), aO, aN.hum and "yes" or "no")
+                aL = aL + 1
             end
             if #_ == 0 then aI[#aI + 1] = "    (none found)" end
         end
         aI[#aI + 1] = ""
-        aI[#aI + 1] = "--- Remotes in ReplicatedStorage (top 40) ---"
-        for aK, aL in ipairs(H.allRemotes(40)) do
+        aI[#aI + 1] = "--- Remotes across RS / Character / Workspace (top 200) ---"
+        for aK, aL in ipairs(H.allRemotes(200)) do
             aI[#aI + 1] = aL
         end
         local aK = table.concat(aI, "\n")
@@ -2943,16 +3026,16 @@ end
 do
     local aA = az["ESP"].frame
     aj.toggle(aA, "Goat ESP", "GoatESP", function(aB)
-        if aB then O.start() end
+        if aB then P.start() end
     end)
     aj.colorPicker(aA, "Goat ESP Color", "GoatESPColor")
     aj.toggle(aA, "Amber ESP", "AmberESP", function(aB)
-        if aB then O.start() end
+        if aB then P.start() end
     end)
     aj.colorPicker(aA, "Amber ESP Color", "AmberESPColor")
     aj.toggle(aA, "No Prompt Delay", "NoPromptDelay")
-    aj.slider(aA, "Outline Transparency", "OutlineTransparency", 0, 1, 0.05, function() O.refresh() end)
-    aj.slider(aA, "Fill Transparency", "FillTransparency", 0, 1, 0.05, function() O.refresh() end)
+    aj.slider(aA, "Outline Transparency", "OutlineTransparency", 0, 1, 0.05, function() P.refresh() end)
+    aj.slider(aA, "Fill Transparency", "FillTransparency", 0, 1, 0.05, function() P.refresh() end)
 end
 
 
@@ -2961,11 +3044,11 @@ local aA, aB = aj.newCard(ax, { tabs = { "Player", "Combat" }, height = 360 })
 do
     local aC = aB["Player"].frame
     aj.toggle(aC, "Fly", "Fly", function(aD)
-        if aD then P.enable() else P.disable() end
+        if aD then Q.enable() else Q.disable() end
     end)
     aj.slider(aC, "Fly Speed", "FlySpeed", 10, 300, 1)
-    aj.button(aC, "Respawn", function() W.respawn() end)
-    aj.button(aC, "Menu", function() W.openMenu() end)
+    aj.button(aC, "Respawn", function() X.respawn() end)
+    aj.button(aC, "Menu", function() X.openMenu() end)
     aj.slider(aC, "Respawn Delay", "RespawnDelay", 0, 30, 1)
     aj.toggle(aC, "Auto Respawn", "AutoRespawn")
     aj.toggle(aC, "Anchored", "Anchored", function() G.applyAnchor() end)
@@ -3006,12 +3089,12 @@ local aE, aF = aj.newCard(aD, { title = "Server Hop", height = 460 })
 
 do
     aj.button(aF, "Join selected server", function()
-        if w.SelectedJobId ~= "" then X.joinJobId(w.SelectedJobId) end
+        if w.SelectedJobId ~= "" then Y.joinJobId(w.SelectedJobId) end
     end)
     aj.button(aF, "Refresh Server List", function()
         F.send("Fetching servers...")
         D.spawn(function()
-            local aG = X.fetchServers()
+            local aG = Y.fetchServers()
             w.ServerListCache = aG
             local aH = {}
             for aI, aJ in ipairs(aG) do aH[#aH + 1] = ("%s  (%d/%d)"):format(aJ.id:sub(1, 8), aJ.playing, aJ.max) end
@@ -3039,11 +3122,11 @@ do
         F.send("Copied JobId.")
     end)
     aj.button(aF, "Join Selected JobId", function()
-        X.joinJobId(w.SelectedJobId)
+        Y.joinJobId(w.SelectedJobId)
     end)
     aj.textInput(aF, "JobId", "SelectedJobId", "Enter JobId here")
-    aj.button(aF, "Rejoin Server", function() X.rejoin() end)
-    aj.button(aF, "Server Hop", function() X.randomHop() end)
+    aj.button(aF, "Rejoin Server", function() Y.rejoin() end)
+    aj.button(aF, "Server Hop", function() Y.randomHop() end)
     aj.slider(aF, "Hop On Player Count", "HopOnPlayerCount", 0, 30, 1)
     aj.toggle(aF, "Hop On Friend Detection", "HopOnFriend")
 end
@@ -3070,85 +3153,85 @@ do
 end
 
 
-local Y = C:addPage("Settings")
+local aO = C:addPage("Settings")
 
-local Z  = aj.newColumn(Y, 0.5)
+local Z  = aj.newColumn(aO, 0.5)
 Z.Position = UDim2.fromOffset(8, 8)
-local _ = aj.newColumn(Y, 0.5)
+local _ = aj.newColumn(aO, 0.5)
 _.Position = UDim2.new(0.5, 4, 0, 8)
 
-local aO, aP = aj.newCard(Z, { title = "Themes", height = 280 })
+local aP, aQ = aj.newCard(Z, { title = "Themes", height = 280 })
 do
-    aj.colorPicker(aP, "Background color", "BgColor",   function() ae.apply() end)
-    aj.colorPicker(aP, "Main color",        "MainColor", function() ae.apply() end)
-    aj.colorPicker(aP, "Accent color",      "AccentColor", function() ae.apply() end)
-    aj.colorPicker(aP, "Outline color",     "OutlineColor", function() ae.apply() end)
-    aj.colorPicker(aP, "Font color",        "FontColor", function() ae.apply() end)
-    aj.dropdown(aP, "Font Face", "FontFace", v.FontOptions, function() ae.apply() end)
-    at = aj.dropdown(aP, "Theme list", "Theme", ae.listNames())
-    aj.button(aP, "Load theme", function() ae.load(w.Theme) end)
-    aj.button(aP, "Overwrite theme", function()
+    aj.colorPicker(aQ, "Background color", "BgColor",   function() ae.apply() end)
+    aj.colorPicker(aQ, "Main color",        "MainColor", function() ae.apply() end)
+    aj.colorPicker(aQ, "Accent color",      "AccentColor", function() ae.apply() end)
+    aj.colorPicker(aQ, "Outline color",     "OutlineColor", function() ae.apply() end)
+    aj.colorPicker(aQ, "Font color",        "FontColor", function() ae.apply() end)
+    aj.dropdown(aQ, "Font Face", "FontFace", v.FontOptions, function() ae.apply() end)
+    at = aj.dropdown(aQ, "Theme list", "Theme", ae.listNames())
+    aj.button(aQ, "Load theme", function() ae.load(w.Theme) end)
+    aj.button(aQ, "Overwrite theme", function()
         if ae.saveCurrent(w.Theme) then F.send("Saved theme: " .. w.Theme) end
     end)
 end
 
-local aQ, aR = aj.newCard(_, { title = "Configuration", height = 320 })
+local aR, aS = aj.newCard(_, { title = "Configuration", height = 320 })
 do
-    aj.textInput(aR, "Config name", "_cfgName", "name")
-    aj.button(aR, "Create config", function() af.save(w._cfgName or "") end)
-    as = aj.dropdown(aR, "Config list", "_cfgPicked", af.list())
-    aj.button(aR, "Refresh list", function() as:setOptions(af.list()) end)
-    aj.button(aR, "Load config",      function() af.load(w._cfgPicked or "") end)
-    aj.button(aR, "Overwrite config", function() af.save(w._cfgPicked or "") end)
-    aj.button(aR, "Delete config",    function()
+    aj.textInput(aS, "Config name", "_cfgName", "name")
+    aj.button(aS, "Create config", function() af.save(w._cfgName or "") end)
+    as = aj.dropdown(aS, "Config list", "_cfgPicked", af.list())
+    aj.button(aS, "Refresh list", function() as:setOptions(af.list()) end)
+    aj.button(aS, "Load config",      function() af.load(w._cfgPicked or "") end)
+    aj.button(aS, "Overwrite config", function() af.save(w._cfgPicked or "") end)
+    aj.button(aS, "Delete config",    function()
         af.delete(w._cfgPicked or "")
         as:setOptions(af.list())
     end)
-    aj.button(aR, "Set autoload",   function()
+    aj.button(aS, "Set autoload",   function()
         if w._cfgPicked and w._cfgPicked ~= "" then
             af.setAutoload(w._cfgPicked)
             if aq then aq:setText("Current autoload config: " .. w.AutoloadConfig) end
             F.send("Autoload set: " .. w.AutoloadConfig)
         end
     end)
-    aj.button(aR, "Reset autoload", function()
+    aj.button(aS, "Reset autoload", function()
         af.resetAutoload()
         if aq then aq:setText("Current autoload config: none") end
     end)
-    aq = aj.label(aR,
+    aq = aj.label(aS,
         "Current autoload config: " .. (af.getAutoload() ~= "" and af.getAutoload() or "none"))
-    aj.textInput(aR, "Import Data", "_importData", "paste exported config here")
-    aj.button(aR, "Export config", function()
-        local aS = af.exportCurrent()
-        pcall(setclipboard, aS)
+    aj.textInput(aS, "Import Data", "_importData", "paste exported config here")
+    aj.button(aS, "Export config", function()
+        local aT = af.exportCurrent()
+        pcall(setclipboard, aT)
         F.send("Exported to clipboard.")
     end)
-    aj.button(aR, "Import config", function() af.importString(w._importData or "") end)
+    aj.button(aS, "Import config", function() af.importString(w._importData or "") end)
 end
 
-local aS, aT = aj.newCard(Z, { title = "Menu", height = 160 })
+local aT, aU = aj.newCard(Z, { title = "Menu", height = 160 })
 do
-    aj.keybind(aT, "Menu bind", "MenuBind")
-    aj.toggle(aT, "Autoexecute", "Autoexecute", function(aU)
-        if aU then
+    aj.keybind(aU, "Menu bind", "MenuBind")
+    aj.toggle(aU, "Autoexecute", "Autoexecute", function(aV)
+        if aV then
             
-            local aV = 'pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kyronshaw912-collab/NameHub/main/loader.lua"))() end)'
-            local aW = { "autoexec/", "auto_exec/", "autoexecute/" }
-            local aX
-            for aY, aZ in ipairs(aW) do
-                local a_ = pcall(b.writefile, aZ .. "NameHubJB_loader.lua", aV)
-                if a_ then aX = aZ; break end
+            local aW = 'pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kyronshaw912-collab/NameHub/main/loader.lua"))() end)'
+            local aX = { "autoexec/", "auto_exec/", "autoexecute/" }
+            local aY
+            for aZ, a_ in ipairs(aX) do
+                local a0 = pcall(b.writefile, a_ .. "NameHubJB_loader.lua", aW)
+                if a0 then aY = a_; break end
             end
-            if aX then F.send("Autoexec written: " .. aX) else F.send("Autoexec unsupported by executor.") end
+            if aY then F.send("Autoexec written: " .. aY) else F.send("Autoexec unsupported by executor.") end
         end
     end)
-    aj.dropdown(aT, "Notification Side", "NotificationSide", v.NotifySides)
-    aj.dropdown(aT, "UI Zoom", "_ZoomPick",
+    aj.dropdown(aU, "Notification Side", "NotificationSide", v.NotifySides)
+    aj.dropdown(aU, "UI Zoom", "_ZoomPick",
         { "75%", "100%", "125%", "150%", "175%", "200%", "250%" },
-        function(aU)
-            local aV = tonumber((aU:gsub("%%", "")))
-            if aV and aV > 0 then
-                w.UIScale = aV / 100
+        function(aV)
+            local aW = tonumber((aV:gsub("%%", "")))
+            if aW and aW > 0 then
+                w.UIScale = aW / 100
                 if C and C.uiScale then C.uiScale.Scale = w.UIScale end
             end
         end
@@ -3159,11 +3242,11 @@ end
 
 
 C.searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-    local aU = C.searchBox.Text:lower()
-    for aV, aW in pairs(z) do
-        if aW.instance and aW.label and aW.instance.Parent then
-            local aX = (aU == "") or aW.label:lower():find(aU, 1, true)
-            aW.instance.Visible = aX and true or false
+    local aV = C.searchBox.Text:lower()
+    for aW, aX in pairs(z) do
+        if aX.instance and aX.label and aX.instance.Parent then
+            local aY = (aV == "") or aX.label:lower():find(aV, 1, true)
+            aX.instance.Visible = aY and true or false
         end
     end
 end)
@@ -3171,10 +3254,10 @@ end)
 
 
 
-D.conn("ui_toggle", f.InputBegan:Connect(function(aU, aV)
-    if aV then return end
-    if aU.UserInputType ~= Enum.UserInputType.Keyboard then return end
-    if aU.KeyCode.Name == w.MenuBind then
+D.conn("ui_toggle", f.InputBegan:Connect(function(aV, aW)
+    if aW then return end
+    if aV.UserInputType ~= Enum.UserInputType.Keyboard then return end
+    if aV.KeyCode.Name == w.MenuBind then
         w.UIVisible = not w.UIVisible
         C.win.Visible = w.UIVisible
     end
@@ -3187,11 +3270,11 @@ D.conn("stats_tick", e.Heartbeat:Connect(function()
     if not w.Alive then return end
     if an then an:setText("Coins Gained: " .. tostring(w.CoinsGained)) end
     if w.StartTime and w.StatsCounting then
-        local aU = os.time() - w.StartTime
-        if ao  then ao:setText("Time Elapsed: " .. D.fmtTime(aU)) end
+        local aV = os.time() - w.StartTime
+        if ao  then ao:setText("Time Elapsed: " .. D.fmtTime(aV)) end
         if ap then
-            local aV = aU > 0 and (w.CoinsGained / (aU / 60)) or 0
-            ap:setText(("Rate: %.1f/min"):format(aV))
+            local aW = aV > 0 and (w.CoinsGained / (aV / 60)) or 0
+            ap:setText(("Rate: %.1f/min"):format(aW))
         end
     else
         if ao  then ao:setText("Time Elapsed: N/A") end
@@ -3209,7 +3292,7 @@ end))
 
 D.conn("charadded", q.CharacterAdded:Connect(function()
     task.wait(0.2)
-    if w.Fly then P.enable() end
+    if w.Fly then Q.enable() end
     G.applySpeed()
     G.applyAnchor()
 end))
@@ -3221,19 +3304,19 @@ getgenv()._NameHubJB_Alive  = true
 getgenv()._NameHubJB_Unload = am
 
 ad()
-W.attachAutoRespawn()
-X.attachWatchers()
+X.attachAutoRespawn()
+Y.attachWatchers()
 aa.attach()
 ab.attachInterval()
-N.start()
+O.start()
 
 
 do
-    local aU = af.getAutoload()
-    if aU ~= "" then
-        w.AutoloadConfig = aU
-        af.load(aU)
-        if aq then aq:setText("Current autoload config: " .. aU) end
+    local aV = af.getAutoload()
+    if aV ~= "" then
+        w.AutoloadConfig = aV
+        af.load(aV)
+        if aq then aq:setText("Current autoload config: " .. aV) end
     end
 end
 
