@@ -11,7 +11,7 @@
 
 
 
-local a = "v2.0.6 NameHub (jb-movement-20260529)"
+local a = "v2.0.6.1 NameHub (jb-movement-fix-20260529)"
 
 
 
@@ -173,7 +173,9 @@ local w = {
     
     
     AutofarmMovement  = "Teleport",
-    StopDistance      = 8,
+    
+    
+    StopDistance      = 10,
     
     
     
@@ -759,18 +761,28 @@ function M.start()
                     
                     
                     
-                    if V > w.StopDistance then
-                        if w.AutofarmMovement == "Fly" then
+                    
+                    
+                    
+                    
+                    
+                    if w.AutofarmMovement == "Fly" then
+                        if V > w.StopDistance then
                             FarmMove.flyToward(S.root.Position)
-                        elseif w.AutofarmMovement == "Walk" then
+                        elseif FarmMove.flyActive() then
+                            _fmBV.Velocity = Vector3.zero
+                        end
+                    elseif w.AutofarmMovement == "Walk" then
+                        if V > w.StopDistance then
                             FarmMove.walkTo(S.root.Position)
-                        else
-                            FarmMove.tpTo(S.root.Position)
                         end
                     else
                         
-                        if w.AutofarmMovement == "Fly" and FarmMove.flyActive() then
-                            _fmBV.Velocity = Vector3.zero
+                        
+                        
+                        
+                        if V > w.Range then
+                            FarmMove.tpTo(S.root.Position)
                         end
                     end
 
@@ -2846,7 +2858,7 @@ do
         
         if aB ~= "Fly" then T.stopFly() end
     end)
-    aj.slider(aA, "Stop Distance", "StopDistance", 2, 30, 1)
+    aj.slider(aA, "Stop Distance (Fly/Walk only)", "StopDistance", 2, 30, 1)
     aj.slider(aA, "Speed", "Speed", 16, 200, 1, function() G.applySpeed() end)
     aj.dropdown(aA, "Autofarm Dino", "AutofarmDino", v.DinoOptions, function(aB)
         local aC = H.remoteByKeywords(v.DinoChangeKeywords)
