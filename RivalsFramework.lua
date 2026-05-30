@@ -27,12 +27,16 @@ local a = "v0.1.0 NameHub (rivals-initial-20260530)"
 
 
 
+
+
+
+
 local b = {
-    [17625359962] = "Rivals",
+    [6035872082] = "Rivals",
 }
 
-if not b[game.PlaceId] then
-    warn(("[NameHub] This script is for Rivals. Current PlaceId %d is not supported."):format(game.PlaceId))
+if not b[game.GameId] then
+    warn(("[NameHub] This script is for Rivals. Current PlaceId %d / UniverseId %d is not supported."):format(game.PlaceId, game.GameId))
     return
 end
 
