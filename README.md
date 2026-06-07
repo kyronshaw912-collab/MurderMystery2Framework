@@ -1,90 +1,38 @@
-# RivalsFramework
+# MurderMystery2Framework
 
-A focused Aimbot + ESP framework for the Roblox FPS **Rivals** (by Nosniy
-Games), built by NameHub.
+NameHub's framework for **Roblox - Murder Mystery 2** (PlaceId `142823291`, UniverseId `66654135`).
 
-## Status
+## What it does
 
-- Build: `v0.1.0` - initial release after pivoting from PriorExtinctionFramework.
-- Scope: **Aimbot + ESP only**.
+- **Role detection** - identifies the Murderer (knife) and Sheriff (gun) every 0.5s.
+- **Player ESP** - box / name / `[Role]` tag / distance / health / tracer, color-coded by role.
+- **Highlight chams** - per-role toggle + fill transparency + color picker.
+- **Item ESP** - Gun-drop ESP (when the Sheriff dies) and Coin ESP.
+- **Auto-grab coins** - configurable radius TP-pickup.
+- **Movement** - walk-speed / jump-power overrides, infinite jump, noclip, full fly (WASD + Space/Ctrl).
+- **Teleports** - TP-to-Murderer / TP-to-Sheriff / TP-to-Gun + Shift+Click teleport.
+- **Sheriff aimbot** - mouse-only (mousemoverel), FOV circle, smoothing, optional murderer-only targeting.
+- **Misc** - Anti-AFK, no-fall-damage, manual reset.
+- **Linoria UI** - Theme + Save managers under `MM2NameHub/`.
 
-## Supported games
+## How it's loaded
 
-| PlaceId | Name |
-| --- | --- |
-| 17625359962 | Rivals (main) |
+This file is **auto-built** by `obfuscate.js` from `source.lua`. The published binary is `MurderMystery2Framework.lua` and is consumed by the NameHub universal loader.
 
-The script refuses to run on any other PlaceId.
-
-> Note: Rivals runs Roblox's Hyperion / Byfron client anti-cheat. This
-> script only works inside executors that bypass Hyperion (Solara, Wave,
-> AWP, etc on PC; Delta / Codex / Hydrogen on mobile). If your executor
-> can't inject into Rivals, the script will never reach the loadstring.
-
-## Loadstring
+Direct loadstring:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/kyronshaw912-collab/RivalsFramework/main/RivalsFramework.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/kyronshaw912-collab/MurderMystery2Framework/main/MurderMystery2Framework.lua"))()
 ```
 
-## Features
+Universal loader (auto-detects MM2 by PlaceId / UniverseId):
 
-### Aimbot (Aimbot tab)
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/kyronshaw912-collab/NameHub/main/loader.lua"))()
+```
 
-- **FOV-circle target acquisition** - configurable pixel radius around the
-  crosshair; only enemies whose target-bone projects inside the FOV are
-  considered.
-- **Bone selection** - `Head` (default), `UpperTorso`, `HumanoidRootPart`,
-  `Random`.
-- **Smoothness** - 0 = snap to target, 0.95 = barely move (legit-style).
-- **Prediction** - lerps the target's position forward by their velocity *
-  N seconds to compensate for network ping. 0.13 s is a good default for
-  ~100 ms ping.
-- **Team check** - skips friendlies whose `Player.Team` matches yours.
-- **Visible check** - raycast from camera to the target; skips occluded
-  enemies.
-- **Sticky target** - keep aiming at the same player until they die /
-  leave the FOV / become invisible (instead of re-acquiring every frame).
-- **Hold / Toggle mode** - default is hold Right Mouse Button.
-- **FOV circle visual** - thin circle around the crosshair so you can see
-  the FOV radius. Colour-pickable, optionally filled.
+## Notes
 
-### ESP (ESP tab)
-
-- **Box ESP** - 2D bounding box around each enemy.
-- **Name + distance** - tag with display name and distance in studs.
-- **Healthbar** - vertical bar on the box, colour lerps red -> green.
-- **Tracers** - line from screen origin (Bottom / Center / Mouse) to each
-  enemy.
-- **Chams** - through-wall character highlight via Roblox's native
-  `Highlight` instance (works across executors).
-- **Team check** - skip teammates.
-- **Max distance** - hide ESP beyond N studs (default 2000).
-- **Per-feature colours** - cycle through a small palette by clicking the
-  swatch.
-
-### Settings tab
-
-- Live status (current target, candidates in FOV)
-- Build label
-- Unload Script button (cleans up all connections, Drawings, and the GUI)
-
-## Build pipeline
-
-`source.lua` is the readable Luau source; `RivalsFramework.lua` is the
-darklua-processed build that ships via loadstring. The `obfuscate.js`
-script (run automatically on every `git commit` via the pre-commit hook)
-strips Luau type annotations, minifies, removes comments, and renames
-locals.
-
-## Files
-
-- `source.lua` - readable source (gitignored).
-- `RivalsFramework.lua` - the build that gets `HttpGet`'d.
-- `obfuscate.js` - build pipeline.
-- `.darklua.json` - darklua rules.
-- `README.md` - this file.
-
-## License
-
-Personal use. Not affiliated with Rivals or Nosniy Games.
+- No Hyperion bypass needed - MM2 doesn't ship the LocalScript3 / ClientAlert anti-cheat that Rivals does. Any modern Roblox executor is enough.
+- The game guard accepts either the MM2 UniverseId (`66654135`) or PlaceId (`142823291`), so VIP servers / re-skins of the main place still load the script correctly.
+- Linoria source files (Library / ThemeManager / SaveManager) are **cached on disk** under `NameHub_Linoria/` after the first run, so subsequent loads start in under a second.
